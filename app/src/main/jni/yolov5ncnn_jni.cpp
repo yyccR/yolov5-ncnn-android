@@ -307,6 +307,7 @@ JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved)
     ncnn::destroy_gpu_instance();
 }
 
+
 // public native boolean Init(AssetManager mgr);
 JNIEXPORT jboolean JNICALL Java_com_example_yolov5ncnnandroid_YoloV5Ncnn_Init(JNIEnv* env, jobject thiz, jobject assetManager)
 {
@@ -359,7 +360,6 @@ JNIEXPORT jboolean JNICALL Java_com_example_yolov5ncnnandroid_YoloV5Ncnn_Init(JN
     hId = env->GetFieldID(objCls, "h", "F");
     labelId = env->GetFieldID(objCls, "label", "Ljava/lang/String;");
     probId = env->GetFieldID(objCls, "prob", "F");
-
     return JNI_TRUE;
 }
 

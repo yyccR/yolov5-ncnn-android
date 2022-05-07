@@ -4,6 +4,7 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 
 public class Yolov5NcnnDetector {
+
     public class Obj {
         public float x;
         public float y;
@@ -13,8 +14,8 @@ public class Yolov5NcnnDetector {
         public float prob;
     }
 
-    public native Boolean Init(AssetManager mgr);
-    public native Obj[] Detect(Bitmap bitmap, Boolean use_gpu);
+    public native boolean Init(AssetManager assetManager);
+    public native Obj[] Detect(Bitmap bitmap, boolean use_gpu);
 
     static {
         System.loadLibrary("yolov5ncnnandroid");

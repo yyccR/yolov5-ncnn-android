@@ -120,54 +120,54 @@ public class FullScreenAnalyse implements ImageAnalysis.Analyzer {
             );
 
             // 模型输入的bitmap
-            Matrix previewToModelTransform =
-                    imageProcess.getTransformationMatrix(
-                            cropImageBitmap.getWidth(), cropImageBitmap.getHeight(),
-                            yolov5NcnnDetector.getInputSize().getWidth(),
-                            yolov5NcnnDetector.getInputSize().getHeight(),
-                            0, false);
-            Bitmap modelInputBitmap = Bitmap.createBitmap(cropImageBitmap, 0, 0,
-                    cropImageBitmap.getWidth(), cropImageBitmap.getHeight(),
-                    previewToModelTransform, false);
-
-            Matrix modelToPreviewTransform = new Matrix();
-            previewToModelTransform.invert(modelToPreviewTransform);
-
-            ArrayList<Recognition> recognitions = yolov5NcnnDetector.Detect(modelInputBitmap);
-
-            Bitmap emptyCropSizeBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
-            Canvas cropCanvas = new Canvas(emptyCropSizeBitmap);
-            // 边框画笔
-            Paint boxPaint = new Paint();
-            boxPaint.setStrokeWidth(5);
-            boxPaint.setStyle(Paint.Style.STROKE);
-            boxPaint.setColor(Color.RED);
-            // 字体画笔
-            Paint textPain = new Paint();
-            textPain.setTextSize(50);
-            textPain.setColor(Color.RED);
-            textPain.setStyle(Paint.Style.FILL);
-
-            for (Recognition res : recognitions) {
-                RectF location = res.getLocation();
-                String label = res.getLabelName();
-                float confidence = res.getConfidence();
-                modelToPreviewTransform.mapRect(location);
-                cropCanvas.drawRect(location, boxPaint);
-                cropCanvas.drawText(label + ":" + String.format("%.2f", confidence), location.left, location.top, textPain);
-            }
-            long end = System.currentTimeMillis();
-            long costTime = (end - start);
-            image.close();
-            emitter.onNext(new Result(costTime, emptyCropSizeBitmap));
+//            Matrix previewToModelTransform =
+//                    imageProcess.getTransformationMatrix(
+//                            cropImageBitmap.getWidth(), cropImageBitmap.getHeight(),
+//                            yolov5NcnnDetector.getInputSize().getWidth(),
+//                            yolov5NcnnDetector.getInputSize().getHeight(),
+//                            0, false);
+//            Bitmap modelInputBitmap = Bitmap.createBitmap(cropImageBitmap, 0, 0,
+//                    cropImageBitmap.getWidth(), cropImageBitmap.getHeight(),
+//                    previewToModelTransform, false);
+//
+//            Matrix modelToPreviewTransform = new Matrix();
+//            previewToModelTransform.invert(modelToPreviewTransform);
+//
+//            ArrayList<Recognition> recognitions = yolov5NcnnDetector.Detect(modelInputBitmap);
+//
+//            Bitmap emptyCropSizeBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
+//            Canvas cropCanvas = new Canvas(emptyCropSizeBitmap);
+//            // 边框画笔
+//            Paint boxPaint = new Paint();
+//            boxPaint.setStrokeWidth(5);
+//            boxPaint.setStyle(Paint.Style.STROKE);
+//            boxPaint.setColor(Color.RED);
+//            // 字体画笔
+//            Paint textPain = new Paint();
+//            textPain.setTextSize(50);
+//            textPain.setColor(Color.RED);
+//            textPain.setStyle(Paint.Style.FILL);
+//
+//            for (Recognition res : recognitions) {
+//                RectF location = res.getLocation();
+//                String label = res.getLabelName();
+//                float confidence = res.getConfidence();
+//                modelToPreviewTransform.mapRect(location);
+//                cropCanvas.drawRect(location, boxPaint);
+//                cropCanvas.drawText(label + ":" + String.format("%.2f", confidence), location.left, location.top, textPain);
+//            }
+//            long end = System.currentTimeMillis();
+//            long costTime = (end - start);
+//            image.close();
+//            emitter.onNext(new Result(costTime, emptyCropSizeBitmap));
         }).subscribeOn(Schedulers.io()) // 这里定义被观察者,也就是上面代码的线程, 如果没定义就是主线程同步, 非异步
                 // 这里就是回到主线程, 观察者接受到emitter发送的数据进行处理
                 .observeOn(AndroidSchedulers.mainThread())
                 // 这里就是回到主线程处理子线程的回调数据.
                 .subscribe((Result result) -> {
-                    boxLabelCanvas.setImageBitmap(result.bitmap);
-                    frameSizeTextView.setText(previewHeight + "x" + previewWidth);
-                    inferenceTimeTextView.setText(Long.toString(result.costTime) + "ms");
+//                    boxLabelCanvas.setImageBitmap(result.bitmap);
+//                    frameSizeTextView.setText(previewHeight + "x" + previewWidth);
+//                    inferenceTimeTextView.setText(Long.toString(result.costTime) + "ms");
                 });
 
     }

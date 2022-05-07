@@ -65,8 +65,8 @@ public class MainActivity extends AppCompatActivity {
         // 加载模型
         try {
             this.yolov5NcnnDetector = new Yolov5NcnnDetector();
-            this.yolov5NcnnDetector.Init();
-            Log.i("model", "Success loading model" + this.yolov5NcnnDetector.getModelFile());
+//            this.yolov5NcnnDetector.Init();
+//            Log.i("model", "Success loading model" + this.yolov5NcnnDetector.getModelFile());
         } catch (Exception e) {
             Log.e("image", "load model error: " + e.getMessage() + e.toString());
         }
