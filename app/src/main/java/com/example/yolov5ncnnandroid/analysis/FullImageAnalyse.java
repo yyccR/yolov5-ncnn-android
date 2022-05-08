@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -68,7 +69,7 @@ public class FullImageAnalyse implements ImageAnalysis.Analyzer {
         int previewWidth = previewView.getWidth();
 
         // 这里Observable将image analyse的逻辑放到子线程计算, 渲染UI的时候再拿回来对应的数据, 避免前端UI卡顿
-        Observable.create( (ObservableEmitter<Result> emitter) -> {
+//        Observable.create( (ObservableEmitter<Result> emitter) -> {
             long start = System.currentTimeMillis();
 
             byte[][] yuvBytes = new byte[3][];
@@ -123,52 +124,58 @@ public class FullImageAnalyse implements ImageAnalysis.Analyzer {
 //            Bitmap modelInputBitmap = Bitmap.createBitmap(cropImageBitmap, 0, 0,
 //                    cropImageBitmap.getWidth(), cropImageBitmap.getHeight(),
 //                    previewToModelTransform, false);
-//
+
 //            Matrix modelToPreviewTransform = new Matrix();
 //            previewToModelTransform.invert(modelToPreviewTransform);
-//
-//            ArrayList<Recognition> recognitions = yolov5NcnnDetector.Detect(modelInputBitmap);
-////            ArrayList<Recognition> recognitions = yolov5TFLiteDetector.detect(imageBitmap);
-//
-//            Bitmap emptyCropSizeBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
-//            Canvas cropCanvas = new Canvas(emptyCropSizeBitmap);
-////            Paint white = new Paint();
-////            white.setColor(Color.WHITE);
-////            white.setStyle(Paint.Style.FILL);
-////            cropCanvas.drawRect(new RectF(0,0,previewWidth, previewHeight), white);
-//            // 边框画笔
-//            Paint boxPaint = new Paint();
-//            boxPaint.setStrokeWidth(5);
-//            boxPaint.setStyle(Paint.Style.STROKE);
-//            boxPaint.setColor(Color.RED);
-//            // 字体画笔
-//            Paint textPain = new Paint();
-//            textPain.setTextSize(50);
-//            textPain.setColor(Color.RED);
-//            textPain.setStyle(Paint.Style.FILL);
-//
-//            for (Recognition res : recognitions) {
-//                RectF location = res.getLocation();
-//                String label = res.getLabelName();
-//                float confidence = res.getConfidence();
+
+            Yolov5NcnnDetector.Obj[] recognitions = yolov5NcnnDetector.detect(cropImageBitmap, true);
+//            ArrayList<Recognition> recognitions = yolov5TFLiteDetector.detect(imageBitmap);
+
+            Bitmap emptyCropSizeBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
+            Canvas cropCanvas = new Canvas(emptyCropSizeBitmap);
+            Paint white = new Paint();
+            white.setColor(Color.WHITE);
+            white.setStyle(Paint.Style.FILL);
+            cropCanvas.drawRect(new RectF(0,0,previewWidth, previewHeight), white);
+            // 边框画笔
+            Paint boxPaint = new Paint();
+            boxPaint.setStrokeWidth(5);
+            boxPaint.setStyle(Paint.Style.STROKE);
+            boxPaint.setColor(Color.RED);
+            // 字体画笔
+            Paint textPain = new Paint();
+            textPain.setTextSize(50);
+            textPain.setColor(Color.RED);
+            textPain.setStyle(Paint.Style.FILL);
+
+            for (Yolov5NcnnDetector.Obj res : recognitions) {
+                Log.i("ncnn:", res.toString());
+                RectF location = new RectF();
+                location.left = res.x;
+                location.top = res.y;
+                location.right = res.x + res.w;
+                location.bottom = res.y + res.h;
+                float confidence = res.prob;
 //                modelToPreviewTransform.mapRect(location);
-//                cropCanvas.drawRect(location, boxPaint);
-//                cropCanvas.drawText(label + ":" + String.format("%.2f", confidence), location.left, location.top, textPain);
-//            }
-//            long end = System.currentTimeMillis();
-//            long costTime = (end - start);
-//            image.close();
+                cropCanvas.drawRect(location, boxPaint);
+                String label = yolov5NcnnDetector.getLabel(res.label);
+                cropCanvas.drawText(label + ":" + String.format("%.2f", confidence), location.left, location.top, textPain);
+            }
+            long end = System.currentTimeMillis();
+            long costTime = (end - start);
+            image.close();
+            Result result = new Result(costTime, emptyCropSizeBitmap);
 //            emitter.onNext(new Result(costTime, emptyCropSizeBitmap));
 
-        }).subscribeOn(Schedulers.io()) // 这里定义被观察者,也就是上面代码的线程, 如果没定义就是主线程同步, 非异步
+//        }).subscribeOn(Schedulers.io()) // 这里定义被观察者,也就是上面代码的线程, 如果没定义就是主线程同步, 非异步
                 // 这里就是回到主线程, 观察者接受到emitter发送的数据进行处理
-                .observeOn(AndroidSchedulers.mainThread())
+//                .observeOn(AndroidSchedulers.mainThread())
                 // 这里就是回到主线程处理子线程的回调数据.
-                .subscribe((Result result) -> {
-//                    boxLabelCanvas.setImageBitmap(result.bitmap);
-//                    frameSizeTextView.setText(previewHeight + "x" + previewWidth);
-//                    inferenceTimeTextView.setText(Long.toString(result.costTime) + "ms");
-                });
+//                .subscribe((Result result) -> {
+                    boxLabelCanvas.setImageBitmap(result.bitmap);
+                    frameSizeTextView.setText(previewHeight + "x" + previewWidth);
+                    inferenceTimeTextView.setText(Long.toString(result.costTime) + "ms");
+//                });
 
     }
 }
