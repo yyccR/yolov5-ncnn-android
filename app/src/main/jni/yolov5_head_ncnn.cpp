@@ -154,7 +154,8 @@ static void generate_proposals(const ncnn::Mat &anchors, int stride, const ncnn:
                 int class_index = 0;
                 float class_score = -FLT_MAX;
                 for (int k = 0; k < num_class; k++) {
-                    float score = sigmoid(feat_blob.channel(q * feat_offset + 5 + k).row(i)[j]);
+//                    float score = sigmoid(feat_blob.channel(q * feat_offset + 5 + k).row(i)[j]);
+                    float score = feat_blob.channel(q * feat_offset + 5 + k).row(i)[j];
 //                    __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", (std::to_string(score).c_str()));
 
                     if (score > class_score) {
@@ -165,10 +166,10 @@ static void generate_proposals(const ncnn::Mat &anchors, int stride, const ncnn:
 
                 float box_score = sigmoid(feat_blob.channel(q * feat_offset + 4).row(i)[j]);
 
-//                float confidence = sigmoid(box_score) * sigmoid(class_score);
-                float confidence = box_score * class_score;
-
+                float confidence = sigmoid(box_score) * sigmoid(class_score);
+//                float confidence = box_score * class_score;
                 if (confidence >= prob_threshold) {
+//                    __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", (std::to_string(confidence).c_str()));
                     // yolov5/models/yolo.py Detect forward
                     // y = x[i].sigmoid()
                     // y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i].to(x[i].device)) * self.stride[i]  # xy
@@ -197,6 +198,8 @@ static void generate_proposals(const ncnn::Mat &anchors, int stride, const ncnn:
                     obj.h = y1 - y0;
                     obj.label = class_index;
                     obj.prob = confidence;
+//                    __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", (std::to_string(obj.x).c_str()));
+
 
                     objects.push_back(obj);
                 }
@@ -227,7 +230,7 @@ static inline std::string jString2String(JNIEnv *env , jstring jstring)
     return s;
 }
 
-JNIEXPORT jboolean JNICALL
+extern "C" JNIEXPORT jboolean JNICALL
 Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_init(JNIEnv *env, jobject thiz,
                                                                     jobject asset_manager,
                                                                     jstring model_name) {
@@ -249,7 +252,7 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_init(JNIEnv *env,
     // init param
     {
         std::string param = jString2String(env, model_name) + ".param";
-        int ret = yolov5.load_param(mgr, "yolov5s.torchscript.ncnn.param");
+        int ret = yolov5.load_param(mgr, param.c_str());
         __android_log_print(ANDROID_LOG_INFO,"ncnn:", "%s", ("load_param: " + param + " success").c_str());
         if (ret != 0) {
             __android_log_print(ANDROID_LOG_DEBUG, "ncnn:", "load_param failed");
@@ -260,7 +263,7 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_init(JNIEnv *env,
     // init bin
     {
         std::string bin = jString2String(env, model_name) + ".bin";
-        int ret = yolov5.load_model(mgr, "yolov5s.torchscript.ncnn.bin");
+        int ret = yolov5.load_model(mgr, bin.c_str());
         __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", ("load_bin: " + bin + " success").c_str());
         if (ret != 0) {
             __android_log_print(ANDROID_LOG_DEBUG, "ncnn:", "load_bin failed");
@@ -273,7 +276,7 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_init(JNIEnv *env,
             "com/example/yolov5ncnnandroid/detector/Yolov5NcnnDetector$Obj");
     objCls = reinterpret_cast<jclass>(env->NewGlobalRef(localObjCls));
 
-    constructortorId = env->GetMethodID(objCls, "<init>", "()V");
+    constructortorId = env->GetMethodID(objCls, "<init>", "(Lcom/example/yolov5ncnnandroid/detector/Yolov5NcnnDetector;)V");
 
     xId = env->GetFieldID(objCls, "x", "F");
     yId = env->GetFieldID(objCls, "y", "F");
@@ -286,8 +289,7 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_init(JNIEnv *env,
 }
 
 
-JNIEXPORT jobjectArray
-JNICALL
+extern "C" JNIEXPORT jobjectArray JNICALL
 Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_detect(JNIEnv *env, jobject thiz,
                                                                       jobject bitmap,
                                                                       jboolean use_gpu) {
@@ -297,9 +299,9 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_detect(JNIEnv *en
         //return env->NewStringUTF("no vulkan capable gpu");
     }
 
-    const int target_size = 640;
-    const float prob_threshold = 0.25f;
-    const float nms_threshold = 0.45f;
+    const int target_size = 480;
+    const float prob_threshold = 0.5f;
+    const float nms_threshold = 0.15f;
 
     AndroidBitmapInfo info;
     AndroidBitmap_getInfo(env, bitmap, &info);
@@ -312,7 +314,7 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_detect(JNIEnv *en
 //    int img_h = bgr.rows;
 
     // yolov5/models/common.py DetectMultiBackend
-    const int max_stride = 64;
+    const int max_stride = 32;
 
     // letterbox pad to multiple of max_stride
 //    int w = img_w;
@@ -349,7 +351,6 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_detect(JNIEnv *en
     ex.input("in0", in_pad);
 
     std::vector<Object> proposals;
-    std::vector<Object> objects;
 
     // anchor setting from yolov5/models/yolov5s.yaml
 
@@ -368,9 +369,9 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_detect(JNIEnv *en
 
         std::vector<Object> objects8;
         generate_proposals(anchors, 8, in_pad, out, prob_threshold, objects8);
-        for(auto & proposal : objects8){
-            __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", (std::to_string(proposal.x)+" "+std::to_string(proposal.y)).c_str());
-        }
+//        for(auto & proposal : objects8){
+//            __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", (std::to_string(proposal.x)+" "+std::to_string(proposal.y)).c_str());
+//        }
         proposals.insert(proposals.end(), objects8.begin(), objects8.end());
 
     }
@@ -419,15 +420,16 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_detect(JNIEnv *en
     // sort all proposals by score from highest to lowest
     qsort_descent_inplace(proposals);
 //    for(auto & proposal : proposals){
-//        __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", (std::to_string(proposal.x)+" "+std::to_string(proposal.y)).c_str());
+//        __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s",
+//                            (std::to_string(proposal.x)+" "+std::to_string(proposal.y)).c_str());
 //    }
 
     // apply nms with nms_threshold
     std::vector<int> picked;
     nms_sorted_bboxes(proposals, picked, nms_threshold);
 
+    std::vector<Object> objects;
     int count = picked.size();
-
     objects.resize(count);
     for (int i = 0; i < count; i++) {
         objects[i] = proposals[picked[i]];
@@ -451,6 +453,19 @@ Java_com_example_yolov5ncnnandroid_detector_Yolov5NcnnDetector_detect(JNIEnv *en
     }
 
     jobjectArray jObjArray = env->NewObjectArray(objects.size(), objCls, NULL);
+    for (size_t i=0; i<objects.size(); i++)
+    {
+        jobject jObj = env->NewObject(objCls, constructortorId, thiz);
+
+        env->SetFloatField(jObj, xId, objects[i].x);
+        env->SetFloatField(jObj, yId, objects[i].y);
+        env->SetFloatField(jObj, wId, objects[i].w);
+        env->SetFloatField(jObj, hId, objects[i].h);
+        env->SetIntField(jObj, labelId, objects[i].label);
+        env->SetFloatField(jObj, probId, objects[i].prob);
+
+        env->SetObjectArrayElement(jObjArray, i, jObj);
+    }
 
     return jObjArray;
 

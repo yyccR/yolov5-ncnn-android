@@ -6,7 +6,6 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.util.Log;
 
-import com.example.yolov5ncnnandroid.MainActivity;
 
 public class Yolov5NcnnDetector {
 

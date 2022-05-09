@@ -69,7 +69,7 @@ public class FullImageAnalyse implements ImageAnalysis.Analyzer {
         int previewWidth = previewView.getWidth();
 
         // 这里Observable将image analyse的逻辑放到子线程计算, 渲染UI的时候再拿回来对应的数据, 避免前端UI卡顿
-//        Observable.create( (ObservableEmitter<Result> emitter) -> {
+        Observable.create( (ObservableEmitter<Result> emitter) -> {
             long start = System.currentTimeMillis();
 
             byte[][] yuvBytes = new byte[3][];
@@ -118,8 +118,10 @@ public class FullImageAnalyse implements ImageAnalysis.Analyzer {
 //            Matrix previewToModelTransform =
 //                    imageProcess.getTransformationMatrix(
 //                            cropImageBitmap.getWidth(), cropImageBitmap.getHeight(),
-//                            yolov5TFLiteDetector.getInputSize().getWidth(),
-//                            yolov5TFLiteDetector.getInputSize().getHeight(),
+////                            yolov5TFLiteDetector.getInputSize().getWidth(),
+//                            300,
+////                            yolov5TFLiteDetector.getInputSize().getHeight(),
+//                            300,
 //                            0, false);
 //            Bitmap modelInputBitmap = Bitmap.createBitmap(cropImageBitmap, 0, 0,
 //                    cropImageBitmap.getWidth(), cropImageBitmap.getHeight(),
@@ -133,10 +135,10 @@ public class FullImageAnalyse implements ImageAnalysis.Analyzer {
 
             Bitmap emptyCropSizeBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Bitmap.Config.ARGB_8888);
             Canvas cropCanvas = new Canvas(emptyCropSizeBitmap);
-            Paint white = new Paint();
-            white.setColor(Color.WHITE);
-            white.setStyle(Paint.Style.FILL);
-            cropCanvas.drawRect(new RectF(0,0,previewWidth, previewHeight), white);
+//            Paint white = new Paint();
+//            white.setColor(Color.WHITE);
+//            white.setStyle(Paint.Style.FILL);
+//            cropCanvas.drawRect(new RectF(0,0,previewWidth, previewHeight), white);
             // 边框画笔
             Paint boxPaint = new Paint();
             boxPaint.setStrokeWidth(5);
@@ -148,8 +150,9 @@ public class FullImageAnalyse implements ImageAnalysis.Analyzer {
             textPain.setColor(Color.RED);
             textPain.setStyle(Paint.Style.FILL);
 
+//            Log.i("ncnn:", "recognitions size: "+recognitions.length);
             for (Yolov5NcnnDetector.Obj res : recognitions) {
-                Log.i("ncnn:", res.toString());
+//                Log.i("ncnn:", res.toString());
                 RectF location = new RectF();
                 location.left = res.x;
                 location.top = res.y;
@@ -164,18 +167,18 @@ public class FullImageAnalyse implements ImageAnalysis.Analyzer {
             long end = System.currentTimeMillis();
             long costTime = (end - start);
             image.close();
-            Result result = new Result(costTime, emptyCropSizeBitmap);
-//            emitter.onNext(new Result(costTime, emptyCropSizeBitmap));
+//            Result result = new Result(costTime, emptyCropSizeBitmap);
+            emitter.onNext(new Result(costTime, emptyCropSizeBitmap));
 
-//        }).subscribeOn(Schedulers.io()) // 这里定义被观察者,也就是上面代码的线程, 如果没定义就是主线程同步, 非异步
+        }).subscribeOn(Schedulers.io()) // 这里定义被观察者,也就是上面代码的线程, 如果没定义就是主线程同步, 非异步
                 // 这里就是回到主线程, 观察者接受到emitter发送的数据进行处理
-//                .observeOn(AndroidSchedulers.mainThread())
-                // 这里就是回到主线程处理子线程的回调数据.
-//                .subscribe((Result result) -> {
+                .observeOn(AndroidSchedulers.mainThread())
+//                 这里就是回到主线程处理子线程的回调数据.
+                .subscribe((Result result) -> {
                     boxLabelCanvas.setImageBitmap(result.bitmap);
                     frameSizeTextView.setText(previewHeight + "x" + previewWidth);
                     inferenceTimeTextView.setText(Long.toString(result.costTime) + "ms");
-//                });
+                });
 
     }
 }
