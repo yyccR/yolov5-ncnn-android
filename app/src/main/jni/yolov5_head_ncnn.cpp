@@ -166,8 +166,8 @@ static void generate_proposals(const ncnn::Mat &anchors, int stride, const ncnn:
 
                 float box_score = sigmoid(feat_blob.channel(q * feat_offset + 4).row(i)[j]);
 
-                float confidence = sigmoid(box_score) * sigmoid(class_score);
-//                float confidence = box_score * class_score;
+//                float confidence = sigmoid(box_score) * sigmoid(class_score);
+                float confidence = box_score * class_score;
                 if (confidence >= prob_threshold) {
 //                    __android_log_print(ANDROID_LOG_INFO, "ncnn:", "%s", (std::to_string(confidence).c_str()));
                     // yolov5/models/yolo.py Detect forward
